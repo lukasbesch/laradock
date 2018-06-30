@@ -705,6 +705,19 @@ services:
         - workspace
       tty: true
 
+### WP-CLI ####
+    wpcli:
+      image: wordpress:cli
+      environment:
+        - WORDPRESS_DB_HOST=${DEFAULT_DB_SYSTEM}
+        - WORDPRESS_DB_NAME=${WORDPRESS_DB_NAME}
+        - WORDPRESS_DB_PASSWORD=${WORDPRESS_DB_PASSWORD}
+      volumes_from:
+        - applications
+      networks:
+        - frontend
+        - backend
+
 ### Networks Setup ############################################
 
 networks:

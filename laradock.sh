@@ -35,10 +35,11 @@ print_style () {
 
 display_options () {
     print_style "Available options:\n" "info";
-    print_style "   create" "success"; printf "\t\t\t Creates docker environment.\n"
+    print_style "   create" "success"; printf "\t\t Creates docker environment.\n"
     print_style "   up" "success"; printf "\t\t\t Runs docker compose.\n"
     print_style "   down" "success"; printf "\t\t\t Stops containers.\n"
     print_style "   ssh [--root]" "success"; printf "\t\t Opens bash on the workspace, optionally as root user.\n"
+    print_style "   wp [command]" "success"; printf "\t\t Runs WP-CLI in own container\n"
     print_style "   -- [command]" "success"; printf "\t\t Executes any command in workspace.\n"
     print_style "\nExample:" "info"; printf "\t\t ./laradock.sh -- composer install --no-dev --optimize-autoloader\n"
 }
@@ -111,6 +112,9 @@ elif [ "$1" == "ssh" ] ; then
     fi
     print_style "SSH into workspace as user $SSHUSER\n" "info"
     docker-composer exec --user=$SSHUSER workspace bash;
+
+elif [ "$1" == "wp" ] ; then
+    docker-compose run --rm wpcli $*
 
 elif [ "$1" == "--" ] ; then
     shift # removing first argument

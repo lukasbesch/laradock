@@ -33,6 +33,22 @@ You could also use dnsmasq on your local machine to route all traffic with the T
 ## Documentation     
 Please checkout the official docs: https://github.com/laradock/laradock
 
+## laradock.sh Commands ##
+
+    create                Creates docker environment.
+    up                    Runs docker compose.
+    down                  Stops containers.
+    ssh [--root]          Opens bash on the workspace, optionally as root user.
+    wp [command]          Runs WP-CLI in own container
+    -- [command]          Executes any command in workspace.
+    
+Example:
+    
+    ./laradock.sh wp rewrite flush
+    
+    ./laradock.sh -- composer install --no-dev --optimize-autoloader
+
+
 ## Roadmap
 
 
