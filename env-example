@@ -64,6 +64,11 @@ CHANGE_SOURCE=false
 # Containers Customization
 ###########################################################
 
+### WP-CLI #############################################################################################################
+
+WORDPRESS_DB_NAME=wordpress
+WORDPRESS_DB_PASSWORD=root
+
 ### WORKSPACE ##########################################################################################################
 
 WORKSPACE_INSTALL_XDEBUG=false
@@ -83,7 +88,6 @@ WORKSPACE_INSTALL_AEROSPIKE=false
 WORKSPACE_INSTALL_V8JS=false
 WORKSPACE_COMPOSER_GLOBAL_INSTALL=false
 WORKSPACE_COMPOSER_REPO_PACKAGIST=
-WORKSPACE_WPCLI_GLOBAL_INSTALL=true
 WORKSPACE_WPCLI_GLOBAL_INSTALL=true
 WORKSPACE_INSTALL_WORKSPACE_SSH=false
 WORKSPACE_INSTALL_LARAVEL_ENVOY=false
