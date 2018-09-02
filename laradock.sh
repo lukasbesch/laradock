@@ -12,6 +12,10 @@
 # Composer install: ./laradock.sh -- composer install
 # Composer update: ./laradock.sh -- composer update
 
+if [ -f .env ]; then
+    source .env
+fi
+
 # prints colored text
 print_style () {
 
@@ -40,18 +44,19 @@ display_options () {
     print_style "   down" "success"; printf "\t\t\t Stops containers.\n"
     print_style "   ssh [--root]" "success"; printf "\t\t Opens bash on the workspace, optionally as root user.\n"
     print_style "   wp [command]" "success"; printf "\t\t Runs WP-CLI in own container\n"
+    print_style "   composer [command]" "success"; printf "\t\t Runs Composer in own container\n"
+    print_style "   theme composer [command]" "success"; printf "\t\t Runs Composer in theme directory\n"
     print_style "   -- [command]" "success"; printf "\t\t Executes any command in workspace.\n"
     print_style "\nExample:" "info"; printf "\t\t ./laradock.sh -- composer install --no-dev --optimize-autoloader\n"
 }
 
 up () {
-    source .env
     docker-compose up -d $DEFAULT_WEBSERVER $DEFAULT_DB_SYSTEM;
 }
 
 copyEnv () {
     while true; do
-        printf "Use the default .env file? (y/n)\n"
+        print_style "Use the default .env file? (y/n)\n" "info"
         read -p "" yn
         case $yn in
             [Yy]* ) cp env-example .env && up; break;;
@@ -62,7 +67,6 @@ copyEnv () {
 }
 
 createDB () {
-    source .env
     pushd $APPLICATION > /dev/null
     FOLDER=${PWD##*/}
     popd > /dev/null
@@ -73,6 +77,12 @@ createDB () {
     dbChar="utf8";
     dbCollate="utf8_unicode_ci";
     docker-compose exec $DEFAULT_DB_SYSTEM bash -c 'mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS \`'$dbName'\` CHARACTER SET '$dbChar' COLLATE '$dbCollate';"'
+}
+
+runComposer () {
+    COMPOSERPATH=$1
+    shift
+    docker run --rm --interactive --tty --volume $PWD/$COMPOSERPATH:/app composer $*
 }
 
 if [[ $# -eq 0 ]] ; then
@@ -111,10 +121,22 @@ elif [ "$1" == "ssh" ] ; then
         SSHUSER=root
     fi
     print_style "SSH into workspace as user $SSHUSER\n" "info"
-    docker-composer exec --user=$SSHUSER workspace bash;
+    docker-compose exec --user=$SSHUSER workspace bash;
 
 elif [ "$1" == "wp" ] ; then
-    docker-compose run --rm wpcli $*
+    docker-compose run --rm --interactive --tty wpcli $*
+
+elif [ "$1" == "composer" ] ; then
+    runComposer $APPLICATION $*
+
+elif [ "$1" == "theme" ] ; then
+    shift
+
+    if [ ! -d $APPLICATION_THEME ] ; then
+        print_style "Could not resolve $APPLICATION_THEME\n Check APPLICATION_THEME in your .env file.\n" "danger"
+    elif [ "$1" == "composer" ] ; then
+        runComposer $APPLICATION_THEME $*
+    fi
 
 elif [ "$1" == "--" ] ; then
     shift # removing first argument
