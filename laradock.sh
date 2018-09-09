@@ -124,7 +124,7 @@ elif [ "$1" == "ssh" ] ; then
     docker-compose exec --user=$SSHUSER workspace bash;
 
 elif [ "$1" == "wp" ] ; then
-    docker-compose run --rm --interactive --tty wpcli $*
+    docker-compose run --rm wpcli $*
 
 elif [ "$1" == "composer" ] ; then
     runComposer $APPLICATION $*
