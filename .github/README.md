@@ -30,7 +30,92 @@ This is a fork of [Laradock](https://github.com/laradock/laradock) prepared to w
        
 Your site should be available at [http://localhost](http://localhost).
 
-You could also use dnsmasq on your local machine to route all traffic with the TLD *.docker to localhost. Now you are able to give each of your sites a custom hostname such as [http://mysite.docker](http://mysite.docker). This is very convenient for the use with password managers. 
+### Global installation
+
+You add this to your `.bashrc` or `.zshrc` to create a global command that runs the `laradock.sh` in subdirectory:
+
+    laradock() {
+        FOUNDSCRIPT=$(find . -name laradock.sh -maxdepth 2 | sed "s|/[^/]*$||");
+        echo "Using: $FOUNDSCRIPT/laradock.sh";
+        pushd $FOUNDSCRIPT > /dev/null
+        sh -c "./laradock.sh $@"
+        popd > /dev/null
+    }
+
+### Custom hostnames (Hosts file)
+
+Update your hosts file like that:
+
+    127.0.0.1 yoursite.docker
+
+### Custom hostnames (dnsmasq)
+
+You can also use dnsmasq on your local machine to route all traffic with the TLD *.docker to localhost. Now you are able to give each of your sites a custom hostname such as [http://yoursite.docker](http://yoursite.docker). This is very convenient for the use with password managers. 
+
+**These instructions are for macOS:**
+
+If you don't have [Homebrew](https://brew.sh/) installed yet, do it :-)
+
+    # This might be outdated, check https://brew.sh
+    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+Once you have it installed, you can use it to install Dnsmasq fairly easy:
+
+    # Update your homebrew installation
+    brew up
+    # Install dnsmasq
+    brew install dnsmasq
+
+Please follow the installation instructions and run the commands `brew` tells you to.
+
+#### Configuring dnsmasq
+
+Dnsmasq should be installed and running now, so now we can use it to resolve certain dns request patterns to ips.
+Edit the `/usr/local/etc/dnsmasq.conf` and add the following line:
+
+    address=/docker/127.0.0.1
+
+You should add it near `address=/double-click.net/127.0.0.1` to keep the file consistent.
+
+Now restart dnsmasq to apply the changes you've made.
+
+    sudo launchctl stop homebrew.mxcl.dnsmasq
+    sudo launchctl start homebrew.mxcl.dnsmasq
+
+To test if everything is set up correctly, use the `dig` command against your new DNS server:
+
+    dig testexample.docker @127.0.0.1
+
+You should get back something like this:
+
+    ;; ANSWER SECTION:
+    testexample.docker. 0 IN	A	127.0.0.1
+
+#### Configuring macOS
+
+We want to use our new DNS server only for development purposes. So the best approach is to send only `*.docker` queries to it.
+You have to create the resolver directory.
+
+    sudo mkdir -p /etc/resolver
+
+Then create a file in this directory with the same name of your top level domain (`docker`)
+
+    sudo tee /etc/resolver/docker >/dev/null <<EOF
+    nameserver 127.0.0.1
+    EOF
+
+Once you’ve created this file, it will automatically be read.
+To test if everything is set up correctly, use the `ping` command:
+
+    # Make sure you haven't broken your DNS.
+    ping -c 1 www.google.com
+    # Check that .docker names work
+    ping -c 1 example1.docker
+    ping -c 1 subdomain.xyz.docker
+
+You should see results that mention the IP address in your Dnsmasq configuration like this:
+
+    PING example1.docker (127.0.0.1): 56 data bytes
 
 ## Documentation   
 Please checkout the official docs: https://github.com/laradock/laradock
