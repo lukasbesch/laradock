@@ -127,7 +127,6 @@ Please checkout the official docs: https://github.com/laradock/laradock
     down                        Stops containers.
     sync                        Manually triggers the synchronization of files.
     sync clean                  Removes all files from docker-sync.
-    down                        Stops containers.
     bash [--root]               Opens bash on the workspace, optionally as root user.
     wp [command]                Runs WP-CLI in one off container.
     composer [command]          Runs Composer in one off container.
