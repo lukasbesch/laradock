@@ -7,7 +7,7 @@ This is a fork of [Laradock](https://github.com/laradock/laradock) prepared to w
  - MySQLi extension is enabled by default
  - WP-CLI container
  - Composer container
- - ./laradock.sh helper script
+ - ./laradock.sh CLI tool
  
 ## Installation
 
@@ -125,11 +125,15 @@ Please checkout the official docs: https://github.com/laradock/laradock
     create                      Creates DB and docker compose.
     up                          Runs docker compose.
     down                        Stops containers.
-    ssh [--root]                Opens bash on the workspace, optionally as root user.
+    sync                        Manually triggers the synchronization of files.
+    sync clean                  Removes all files from docker-sync.
+    down                        Stops containers.
+    bash [--root]               Opens bash on the workspace, optionally as root user.
     wp [command]                Runs WP-CLI in one off container.
     composer [command]          Runs Composer in one off container.
     theme composer [command]    Runs Composer in theme directory.
     -- [command]                Executes any command in workspace.
+    help [command]              Displays pptions.
     
 Example:
     
