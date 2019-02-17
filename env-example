@@ -7,9 +7,6 @@
 # Point to the path of your applications code on your host
 APP_CODE_PATH_HOST=../
 
-# Point to the theme (relative to APP_CODE_PATH_HOST)
-THEME_CODE_PATH=web/app/themes/sage
-
 # Point to where the `APP_CODE_PATH_HOST` should be in the container
 APP_CODE_PATH_CONTAINER=/var/www
 
@@ -19,13 +16,8 @@ APP_CODE_CONTAINER_FLAG=:cached
 # Choose storage path on your machine. For all storage systems
 DATA_PATH_HOST=~/.laradock/data
 
-### Drivers ################################################
-
-# All volumes driver
-VOLUMES_DRIVER=local
-
-# All Networks driver
-NETWORKS_DRIVER=bridge
+# Point to the theme (relative to APP_CODE_PATH_HOST)
+THEME_CODE_PATH=web/app/themes/sage
 
 ### Webserver ##########################################################################################################
 
@@ -34,6 +26,14 @@ DEFAULT_WEBSERVER=nginx
 ### Database System ####################################################################################################
 
 DEFAULT_DB_SYSTEM=mariadb
+
+### Drivers ################################################
+
+# All volumes driver
+VOLUMES_DRIVER=local
+
+# All Networks driver
+NETWORKS_DRIVER=bridge
 
 ### Docker compose files ##################################
 
@@ -44,7 +44,7 @@ COMPOSE_FILE=docker-compose.yml
 COMPOSE_PATH_SEPARATOR=:
 
 # Define the prefix of container names. This is useful if you have multiple projects that use laradock to have seperate containers per project.
-COMPOSE_PROJECT_NAME=laradock-bedrock
+COMPOSE_PROJECT_NAME=laradock
 
 ### PHP Version ###########################################
 
@@ -100,7 +100,7 @@ WORKSPACE_NPM_REGISTRY=
 WORKSPACE_INSTALL_YARN=true
 WORKSPACE_YARN_VERSION=latest
 WORKSPACE_INSTALL_NPM_GULP=true
-WORKSPACE_INSTALL_NPM_BOWER=true
+WORKSPACE_INSTALL_NPM_BOWER=false
 WORKSPACE_INSTALL_NPM_VUE_CLI=true
 WORKSPACE_INSTALL_NPM_ANGULAR_CLI=false
 WORKSPACE_INSTALL_PHPREDIS=true
