@@ -12,13 +12,17 @@
 # Composer install: ./laradock.sh -- composer install
 # Composer update: ./laradock.sh -- composer update
 
-if [ -f .env ]; then
-    source .env
-fi
+DOTENVSH_DEBUG=true
 
-if [ -z $USE_DOCKER_SYNC ]; then
+load_env () {
+    export $(egrep -v '^#' .env | xargs) 2> /dev/null
+}
+
+load_env
+
+if [[ -z $USE_DOCKER_SYNC ]]; then
     USE_DOCKER_SYNC=false
-    if [ $DOCKER_SYNC_STRATEGY == "native_osx" ]; then
+    if [[ $DOCKER_SYNC_STRATEGY == "native_osx" ]]; then
         USE_DOCKER_SYNC=true
     fi
 fi
@@ -26,13 +30,13 @@ fi
 # prints colored text
 print_style () {
 
-    if [ "$2" == "info" ] ; then
+    if [[ "$2" == "info" ]]; then
         COLOR="96m"
-    elif [ "$2" == "success" ] ; then
+    elif [[ "$2" == "success" ]]; then
         COLOR="92m"
-    elif [ "$2" == "warning" ] ; then
+    elif [[ "$2" == "warning" ]]; then
         COLOR="93m"
-    elif [ "$2" == "danger" ] ; then
+    elif [[ "$2" == "danger" ]]; then
         COLOR="91m"
     else #default color
         COLOR="0m"
@@ -50,6 +54,7 @@ display_options () {
     print_style "   create" "success"; printf "\t\t\t Creates docker environment.\n"
     print_style "   up" "success"; printf "\t\t\t\t Runs docker compose.\n"
     print_style "   down" "success"; printf "\t\t\t\t Stops containers.\n"
+    print_style "   rebuild" "success"; printf "\t\t\t Rebuilds containers.\n"
     print_style "   sync" "success"; printf "\t\t\t\t Manually triggers the synchronization of files.\n"
     print_style "   sync clean" "danger"; printf "\t\t\t Removes all files from docker-sync.\n"
     print_style "   bash [--root]" "success"; printf "\t\t Opens bash on the workspace, optionally as root user.\n"
@@ -69,12 +74,28 @@ function invalid_arguments() {
 
 up () {
     if [[ ! -z "$USE_DOCKER_SYNC" ]]; then
-        print_style "Initializing Docker Sync\n" "info"
+        print_style "Initializing docker-sync\n" "info"
         print_style "May take a long time (15min+) on the first run\n" "info"
         docker-sync start;
     fi;
-    print_style "Initializing Docker Compose\n" "info"
+    print_style "Initializing docker-compose\n" "info"
     docker-compose up -d $DEFAULT_WEBSERVER $DEFAULT_DB_SYSTEM;
+}
+
+down () {
+    print_style "Stopping Docker Compose\n" "info"
+    docker-compose stop
+
+    if [[ ! -z "$USE_DOCKER_SYNC" ]]; then
+        print_style "Stopping Docker Sync\n" "info"
+        docker-sync stop
+    fi;
+
+}
+
+rebuild () {
+    print_style "Rebuilding docker images \n" "info"
+    docker-compose build workspace php-fpm $DEFAULT_WEBSERVER $DEFAULT_DB_SYSTEM;
 }
 
 env_copy () {
@@ -82,7 +103,7 @@ env_copy () {
         print_style "Use the default .env file? (y/n)\n" "warning"
         read -p "" yn
         case $yn in
-            [Yy]* ) cp env-example .env && up; break;;
+            [Yy]* ) cp env-example .env; load_env; break;;
             [Nn]* ) exit;;
             * ) echo "Please answer yes or no.";;
         esac
@@ -90,7 +111,7 @@ env_copy () {
 }
 
 database_create () {
-    pushd $APPLICATION > /dev/null
+    pushd $APP_CODE_PATH_HOST > /dev/null
     FOLDER=${PWD##*/}
     popd > /dev/null
     read -p "Enter DB name (default: $FOLDER): " dbName
@@ -126,70 +147,74 @@ if [[ $# -eq 0 ]] ; then
     invalid_arguments "Missing arguments.\n" "danger"
 fi
 
-if [ "$1" == "create" ] ; then
+if [[ "$1" == "create" ]]; then
     print_style "Initializing Docker Compose\n" "info"
-    if [ ! -f .env ]; then
+    if [[ ! -e .env ]]; then
         print_style "No .env file found!\n" "danger"
-        env_copy;
+        env_copy && up
     else
         up
     fi
     database_create;
 
-elif [ "$1" == "up" ]; then
-    if [ ! -f .env ]; then
+elif [[ "$1" == "rebuild" ]]; then
+    if [[ ! -f .env ]]; then
+        ls; exit;
+        print_style "No .env file found!\n" "danger"
+        env_copy;
+    else
+        down
+        rebuild && up
+    fi
+
+elif [[ "$1" == "up" ]]; then
+    if [[ ! -f .env ]]; then
         print_style "No .env file found!\n" "danger"
         env_copy;
     else
         up
     fi
 
-elif [ "$1" == "down" ]; then
-    print_style "Stopping Docker Compose\n" "info"
-    docker-compose stop
+elif [[ "$1" == "down" ]]; then
+    down
 
-    if [[ ! -z "$USE_DOCKER_SYNC" ]]; then
-        print_style "Stopping Docker Sync\n" "info"
-        docker-sync stop
-    fi;
-
-elif [ "$1" == "sync" ]; then
-    if [ "$2" == "clean" ]; then
+elif [[ "$1" == "sync" ]]; then
+    if [[ "$2" == "clean" ]]; then
         docker_sync_clean
-    elif [ -z $2 ]; then
+    elif [[ -z $2 ]]; then
         docker_sync
     else
         invalid_arguments "Invalid arguments.\n" "danger"
     fi;
 
-elif [ "$1" == "bash" ] ; then
+elif [[ "$1" == "bash" ]]; then
     SSHUSER=laradock
-    if [ "$2" == "--root" ] ; then
+    if [[ "$2" == "--root" ]]; then
         SSHUSER=root
     fi
     #print_style "Opens bash on the workspace as $SSHUSER\n" "info"
     docker-compose exec --user=$SSHUSER workspace bash;
 
-elif [ "$1" == "wp" ] ; then
+elif [[ "$1" == "wp" ]]; then
     docker-compose run --rm wpcli $*
 
-elif [ "$1" == "composer" ] ; then
-    composer_run $APPLICATION $*
+elif [[ "$1" == "composer" ]]; then
+    composer_run $APP_CODE_PATH_HOST $*
 
-elif [ "$1" == "theme" ] ; then
+elif [[ "$1" == "theme" ]]; then
     shift
 
-    if [ ! -d $APPLICATION_THEME ] ; then
-        print_style "Could not resolve $APPLICATION_THEME\n Check APPLICATION_THEME in your .env file.\n" "danger"
-    elif [ "$1" == "composer" ] ; then
-        composer_run $APPLICATION_THEME $*
+    if [[ ! -d $APP_CODE_PATH_HOST$THEME_CODE_PATH ]]; then
+        print_style "Could not resolve $APP_CODE_PATH_HOST$THEME_CODE_PATH\n Check THEME_CODE_PATH in your .env file.\n" "danger"
+    elif [[ "$1" == "composer" ]]; then
+        composer_run $APP_CODE_PATH_HOST$THEME_CODE_PATH $*
     fi
 
-elif [ "$1" == "--" ] ; then
+elif [[ "$1" == "--" ]]; then
     shift # removing first argument
     docker-compose exec --user=laradock workspace bash -c "$*"
 
-elif [ "$1" == "help" ] ; then
+elif [[ "$1" == "help" ]]; then
     display_options
 
 else
