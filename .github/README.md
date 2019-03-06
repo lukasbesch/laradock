@@ -6,7 +6,6 @@ This is a fork of [Laradock](https://github.com/laradock/laradock) prepared to w
  - Document root points to /var/www/web  
  - xDebug enabled  
  - WP-CLI and Composer installed in workspace container
- - WP-CLI and Composer one-off container
  - Additional PHP UTF-8 Locales are installed (de_DE, es_ES, fr_FR)  
  - **./laradock.sh CLI tool** (that also uses docker-sync)
  
@@ -132,8 +131,8 @@ Please checkout the official docs: https://github.com/laradock/laradock
     sync                        Manually triggers the synchronization of files.
     sync clean                  Removes all files from docker-sync.
     bash [--root]               Opens bash on the workspace, optionally as root user.
-    wp [command]                Runs WP-CLI in one off container.
-    composer [command]          Runs Composer in one off container.
+    wp [command]                Runs WP-CLI in container.
+    composer [command]          Runs Composer in container.
     theme composer [command]    Runs Composer in theme directory.
     -- [command]                Executes any command in workspace.
     help [command]              Displays pptions.

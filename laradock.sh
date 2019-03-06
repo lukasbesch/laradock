@@ -58,8 +58,8 @@ display_options () {
     print_style "   sync" "success"; printf "\t\t\t\t Manually triggers the synchronization of files.\n"
     print_style "   sync clean" "danger"; printf "\t\t\t Removes all files from docker-sync.\n"
     print_style "   bash [--root]" "success"; printf "\t\t Opens bash on the workspace, optionally as root user.\n"
-    print_style "   wp [command]" "success"; printf "\t\t\t Runs WP-CLI in own container\n"
-    print_style "   composer [command]" "success"; printf "\t\t Runs Composer in own container\n"
+    print_style "   wp [command]" "success"; printf "\t\t\t Runs WP-CLI\n"
+    print_style "   composer [command]" "success"; printf "\t\t Runs Composer in container\n"
     print_style "   theme composer [command]" "success"; printf "\t Runs Composer in theme directory\n"
     print_style "   -- [command]" "success"; printf "\t\t\t Executes any command in workspace.\n"
     print_style "   help" "info"; printf "\t\t\t Help\n"
@@ -123,10 +123,10 @@ database_create () {
     docker-compose exec $DEFAULT_DB_SYSTEM bash -c 'mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS \`'$dbName'\` CHARACTER SET '$dbChar' COLLATE '$dbCollate';"'
 }
 
-composer_run () {
-    COMPOSERPATH=$1
+run_bash_command () {
+    CDTODIR=$1
     shift
-    docker run --rm --interactive --tty --volume $PWD/$COMPOSERPATH:/app composer $*
+    docker-compose exec --user=laradock workspace bash -c "cd $CDTODIR && $*"
 }
 
 docker_sync () {
@@ -196,10 +196,10 @@ elif [[ "$1" == "bash" ]]; then
     docker-compose exec --user=$SSHUSER workspace bash;
 
 elif [[ "$1" == "wp" ]]; then
-    docker-compose run --rm wpcli $*
+    run_bash_command . $*
 
 elif [[ "$1" == "composer" ]]; then
-    composer_run $APP_CODE_PATH_HOST $*
+    run_bash_command . $*
 
 elif [[ "$1" == "theme" ]]; then
     shift
@@ -207,7 +207,9 @@ elif [[ "$1" == "theme" ]]; then
     if [[ ! -d $APP_CODE_PATH_HOST$THEME_CODE_PATH ]]; then
         print_style "Could not resolve $APP_CODE_PATH_HOST$THEME_CODE_PATH\n Check THEME_CODE_PATH in your .env file.\n" "danger"
     elif [[ "$1" == "composer" ]]; then
-        composer_run $APP_CODE_PATH_HOST$THEME_CODE_PATH $*
+        run_bash_command $THEME_CODE_PATH $*
+    else
+        invalid_arguments "Invalid arguments.\n\nRun ./laradock.sh theme composer [commands]" "danger"
     fi
 
 elif [[ "$1" == "--" ]]; then
