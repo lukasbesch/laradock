@@ -3,11 +3,15 @@
 This is a fork of [Laradock](https://github.com/laradock/laradock) prepared to work with WordPress boilerplate [Bedrock](https://github.com/roots/bedrock).
 
 ## What is different?
- - Document root points to /var/www/web  
- - xDebug enabled  
- - WP-CLI and Composer installed in workspace container
+ - Document root points to `/var/www/web` (for NGINX, Apache2 & Caddy)
+ - Composer installed by default
+ - WP-CLI installed by default
+ - WP-CLI Packages installed by default:
+    – [Dotenv](https://github.com/aaemnnosttv/wp-cli-dotenv-command)
+    – [Blade Generate](https://github.com/alwaysblank/blade-generate)
  - Additional PHP UTF-8 Locales are installed (de_DE, es_ES, fr_FR)  
- - **./laradock.sh CLI tool** (that also uses docker-sync)
+ - **./laradock.sh CLI tool** to manage your environment easily
+ - xDebug is enabled by default
  
  [» Compare the fork on Github](https://github.com/laradock/laradock/compare/master...lukasbesch:master)
  

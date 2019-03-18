@@ -199,6 +199,20 @@ RUN if [ ${INSTALL_WP_CLI} = true ]; then \
 # WP CLI Blade Compile:
 ###########################################################################
 
+# For Bedrock
+
+USER laradock
+
+ARG INSTALL_WP_CLI_DOTENV=false
+
+RUN if [ ${INSTALL_WP_CLI_DOTENV} = true ]; then \
+    wp package install aaemnnosttv/wp-cli-dotenv-command \
+;fi
+
+###########################################################################
+# WP CLI Blade Compile:
+###########################################################################
+
 # For Sage Starter Theme
 
 USER laradock
