@@ -196,6 +196,20 @@ RUN if [ ${INSTALL_WP_CLI} = true ]; then \
 ;fi
 
 ###########################################################################
+# WP CLI Blade Compile:
+###########################################################################
+
+# For Sage Starter Theme
+
+USER laradock
+
+ARG INSTALL_WP_CLI_BLADE_GENERATE=false
+
+RUN if [ ${INSTALL_WP_CLI_BLADE_GENERATE} = true ]; then \
+    wp package install git@github.com:alwaysblank/blade-generate.git \
+;fi
+
+###########################################################################
 # SSH2:
 ###########################################################################
 
