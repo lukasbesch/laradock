@@ -12,13 +12,15 @@
 # Composer install: ./laradock.sh -- composer install
 # Composer update: ./laradock.sh -- composer update
 
-DOTENVSH_DEBUG=true
-
 load_env () {
     export $(egrep -v '^#' .env | xargs) 2> /dev/null
 }
 
 load_env
+
+if [[ -z $DEFAULT_CONTAINERS ]]; then
+    DEFAULT_CONTAINERS="workspace php-fpm $DEFAULT_WEBSERVER $DEFAULT_DB_SYSTEM"
+fi
 
 if [[ -z $USE_DOCKER_SYNC ]]; then
     USE_DOCKER_SYNC=false
@@ -54,7 +56,7 @@ display_options () {
     print_style "   create" "success"; printf "\t\t\t Creates docker environment.\n"
     print_style "   up" "success"; printf "\t\t\t\t Runs docker compose.\n"
     print_style "   down" "success"; printf "\t\t\t\t Stops containers.\n"
-    print_style "   rebuild" "success"; printf "\t\t\t Rebuilds containers.\n"
+    print_style "   build" "success"; printf "\t\t\t Builds containers.\n"
     print_style "   sync" "success"; printf "\t\t\t\t Manually triggers the synchronization of files.\n"
     print_style "   sync clean" "danger"; printf "\t\t\t Removes all files from docker-sync.\n"
     print_style "   bash [--root]" "success"; printf "\t\t Opens bash on the workspace, optionally as root user.\n"
@@ -79,23 +81,34 @@ up () {
         docker-sync start;
     fi;
     print_style "Initializing docker-compose\n" "info"
-    docker-compose up -d $DEFAULT_WEBSERVER $DEFAULT_DB_SYSTEM;
+    if [[ $# -eq 0 ]] ; then
+        docker-compose up -d $DEFAULT_CONTAINERS;
+    else
+        docker-compose up -d $*;
+    fi
 }
 
 down () {
     print_style "Stopping Docker Compose\n" "info"
-    docker-compose stop
+    if [[ $# -eq 0 ]] ; then
+        docker-compose stop;
+    else
+        docker-compose stop $*
 
-    if [[ ! -z "$USE_DOCKER_SYNC" ]]; then
-        print_style "Stopping Docker Sync\n" "info"
-        docker-sync stop
-    fi;
-
+        if [[ ! -z "$USE_DOCKER_SYNC" ]]; then
+            print_style "Stopping Docker Sync\n" "info"
+            docker-sync stop
+        fi;
+    fi
 }
 
-rebuild () {
-    print_style "Rebuilding docker images \n" "info"
-    docker-compose build workspace php-fpm $DEFAULT_WEBSERVER $DEFAULT_DB_SYSTEM;
+build () {
+    print_style "Building docker images \n" "info"
+    if [[ $# -eq 0 ]] ; then
+        docker-compose build $DEFAULT_CONTAINERS;
+    else
+        docker-compose build $*;
+    fi
 }
 
 env_copy () {
@@ -120,13 +133,32 @@ database_create () {
     fi
     dbChar="utf8";
     dbCollate="utf8_unicode_ci";
-    docker-compose exec $DEFAULT_DB_SYSTEM bash -c 'mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS \`'$dbName'\` CHARACTER SET '$dbChar' COLLATE '$dbCollate';"'
+
+    maxcounter=45
+    counter=1
+    while ! docker-compose exec $DEFAULT_DB_SYSTEM bash -c 'mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS \`'$dbName'\` CHARACTER SET '$dbChar' COLLATE '$dbCollate';"' > /dev/null 2>&1; do
+        sleep 1
+        counter=`expr $counter + 1`
+        if [ $counter -gt $maxcounter ]; then
+            >&2 echo "We have been waiting for MySQL too long already; failing."
+            exit 1
+        fi;
+    done
+}
+
+wp_dotenv () {
+    run_bash_command . wp dotenv init
+    run_bash_command . wp dotenv regenerate
+    run_bash_command . wp dotenv set --quote-double DB_NAME $dbName
+    run_bash_command . wp dotenv set DB_USER root
+    run_bash_command . wp dotenv set DB_PASS root
+    run_bash_command . wp dotenv set DB_HOST $DEFAULT_DB_SYSTEM
 }
 
 run_bash_command () {
     CDTODIR=$1
     shift
-    docker-compose exec --user=laradock workspace bash -c "cd $CDTODIR && $*"
+    docker-compose exec -T --user=laradock workspace bash -c "cd $CDTODIR && $*"
 }
 
 docker_sync () {
@@ -155,28 +187,31 @@ if [[ "$1" == "create" ]]; then
     else
         up
     fi
-    database_create;
+    database_create && wp_dotenv;
 
-elif [[ "$1" == "rebuild" ]]; then
+elif [[ "$1" == "build" ]]; then
+    shift
     if [[ ! -f .env ]]; then
-        ls; exit;
         print_style "No .env file found!\n" "danger"
         env_copy;
     else
-        down
-        rebuild && up
+        down $*
+        build $*
+        up $*
     fi
 
 elif [[ "$1" == "up" ]]; then
+    shift
     if [[ ! -f .env ]]; then
         print_style "No .env file found!\n" "danger"
         env_copy;
     else
-        up
+        up $*
     fi
 
 elif [[ "$1" == "down" ]]; then
-    down
+    shift
+    down $*
 
 elif [[ "$1" == "sync" ]]; then
     if [[ "$2" == "clean" ]]; then
