@@ -94,12 +94,12 @@ down () {
         docker-compose stop;
     else
         docker-compose stop $*
-
-        if [[ ! -z "$USE_DOCKER_SYNC" ]]; then
-            print_style "Stopping Docker Sync\n" "info"
-            docker-sync stop
-        fi;
     fi
+
+    if [[ ! -z "$USE_DOCKER_SYNC" ]]; then
+        print_style "Stopping Docker Sync\n" "info"
+        docker-sync stop
+    fi;
 }
 
 build () {
