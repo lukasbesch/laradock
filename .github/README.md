@@ -19,9 +19,9 @@ This is a fork of [Laradock](https://github.com/laradock/laradock) prepared to w
 
 1. Clone this repository into a subdirectory of your Bedrock installation. If you want to stay up to date, you might want to use git submodules or git-subrepo.
 
-       git clone https://github.com/lukasbesch/laradock-bedrock.git docker
-       // or
-       git submodule add https://github.com/lukasbesch/laradock-bedrock.git docker
+<p align="center">
+    <a href="http://zalt.me"><img src="http://forthebadge.com/images/badges/built-by-developers.svg" alt="forthebadge" width="240" ></a>
+</p>
 
 2. (Optional) Copy the `env-example` to `.env` in your docker folder. Checkout its options and adjust them as needed.
 3. In your project's `.env` file Set the `DB_HOST` constant to the corresponding container `mariadb` or `mysql`

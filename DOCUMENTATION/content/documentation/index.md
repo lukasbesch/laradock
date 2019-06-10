@@ -394,6 +394,37 @@ Always download the latest version of [Loaders for ionCube ](http://www.ioncube.
 
 
 
+<br>
+<a name="Install-SonarQube"></a>
+
+## Install SonarQube (automatic code review tool)
+SonarQube® is an automatic code review tool to detect bugs, vulnerabilities and code smells in your code. It can integrate with your existing workflow to enable continuous code inspection across your project branches and pull requests.  
+<br>
+1 - Open the `.env` file  
+<br>
+2 - Search for the `SONARQUBE_HOSTNAME=sonar.example.com` argument  
+<br>
+3 - Set it to your-domain `sonar.example.com`  
+<br>
+4 - `docker-compose up -d sonarqube`  
+<br>
+5 - Open your browser: http://localhost:9000/
+
+Troubleshooting:  
+
+if you encounter a database error:
+```
+docker-compose exec --user=root postgres 
+source docker-entrypoint-initdb.d/init_sonarqube_db.sh
+```
+
+If you encounter logs error:
+```
+docker-compose run --user=root --rm sonarqube chown sonarqube:sonarqube /opt/sonarqube/logs 
+```
+[**SonarQube Documentation Here**](https://docs.sonarqube.org/latest/)
+
+
 
 
 
@@ -409,7 +440,9 @@ Always download the latest version of [Loaders for ionCube ](http://www.ioncube.
 <a name="Laradock-for-Production"></a>
 ## Prepare Laradock for Production
 
-It's recommended for production to create a custom `docker-compose.yml` file. For that reason, Laradock is shipped with `production-docker-compose.yml` which should contain only the containers you are planning to run on production (usage example: `docker-compose -f production-docker-compose.yml up -d nginx mysql redis ...`).
+It's recommended for production to create a custom `docker-compose.yml` file, for example `production-docker-compose.yml`
+
+In your new production `docker-compose.yml` file you should contain only the containers you are planning to run in production (usage example: `docker-compose -f production-docker-compose.yml up -d nginx mysql redis ...`).
 
 Note: The Database (MySQL/MariaDB/...) ports should not be forwarded on production, because Docker will automatically publish the port on the host, which is quite insecure, unless specifically told not to. So make sure to remove these lines:
 
@@ -631,12 +664,12 @@ docker-compose up -d metabase
 
 1) Boot the container `docker-compose up -d jenkins`. To enter the container type `docker-compose exec jenkins bash`.
 
-2) Go to `http://localhost:8090/` (if you didn't chanhed your default port mapping) 
+2) Go to `http://localhost:8090/` (if you didn't chanhed your default port mapping)
 
 3) Authenticate from the web app.
 
 - Default username is `admin`.
-- Default password is `docker-compose exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword`. 
+- Default password is `docker-compose exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword`.
 
 (To enter container as root type `docker-compose exec --user root jenkins bash`).
 
@@ -856,6 +889,67 @@ docker-compose up -d gitlab
 2 - Open your browser and visit the localhost on port **8989**:  `http://localhost:8989`
 <br>
 *Note: You may change GITLAB_DOMAIN_NAME to your own domain name like `http://gitlab.example.com` default is `http://localhost`*
+
+
+
+
+
+
+<br>
+<a name="Use-Gitlab-Runner"></a>
+## Use Gitlab Runner
+
+1 - Retrieve the registration token in your gitlab project (Settings > CI / CD > Runners > Set up a specific Runner manually)
+
+2 - Open the `.env` file and set the following changes:
+```
+# so that gitlab container will pass the correct domain to gitlab-runner container
+GITLAB_DOMAIN_NAME=http://gitlab
+
+GITLAB_RUNNER_REGISTRATION_TOKEN=<value-in-step-1>
+
+# so that gitlab-runner container will send POST request for registration to correct domain
+GITLAB_CI_SERVER_URL=http://gitlab
+```
+
+3 - Open the `docker-compose.yml` file and add the following changes:
+```yml
+    gitlab-runner:
+      environment: # these values will be used during `gitlab-runner register`
+        - RUNNER_EXECUTOR=docker # change from shell (default)
+        - DOCKER_IMAGE=alpine
+        - DOCKER_NETWORK_MODE=laradock_backend
+      networks:
+        - backend # connect to network where gitlab service is connected
+```
+
+4 - Run the Gitlab-Runner Container (`gitlab-runner`) with the `docker-compose up` command. Example:
+
+```bash
+docker-compose up -d gitlab-runner
+```
+
+5 - Register the gitlab-runner to the gitlab container
+
+```bash
+docker-compose exec gitlab-runner bash
+gitlab-runner register
+```
+
+6 - Create a `.gitlab-ci.yml` file for your pipeline
+
+```yml
+before_script:
+  - echo Hello!
+
+job1:
+  scripts:
+    - echo job1
+```
+
+7 - Push changes to gitlab
+
+8 - Verify that pipeline is run successful
 
 
 
@@ -1290,6 +1384,21 @@ To install CodeIgniter 3 on Laradock all you have to do is the following simple 
 
 
 <br>
+<a name="Install-Powerline"></a>
+## Install Powerline
+
+1 - Open the `.env` file and set `WORKSPACE_INSTALL_POWERLINE` and `WORKSPACE_INSTALL_PYTHON` to `true`.
+
+2 - Run `docker-compose build workspace`, after the step above.
+
+Powerline is required python
+
+
+
+
+
+
+<br>
 <a name="Install-Symfony"></a>
 ## Install Symfony
 
@@ -1544,6 +1653,23 @@ Enabling Global Composer Install during the build for the container allows you t
 
 
 <br>
+<a name="Magento-2-authentication-credentials"></a>
+## Magento 2 authentication credential (composer install)
+
+1 - Open the `.env` file
+
+2 - Search for the `WORKSPACE_COMPOSER_AUTH` argument under the Workspace Container and set it to `true`
+
+3 - Now add your credentials to `workspace/auth.json`
+
+4 - Re-build the Workspace Container `docker-compose build workspace`
+
+
+
+
+
+
+<br>
 <a name="Install-Prestissimo"></a>
 ## Install Prestissimo
 
@@ -1677,6 +1803,47 @@ Linuxbrew is a package manager for Linux. It is the Linux version of MacOS Homeb
 1 - Open the `.env` file
 
 2 - Search for the `WORKSPACE_INSTALL_LINUXBREW` argument under the Workspace Container and set it to `true`
+
+3 - Re-build the container `docker-compose build workspace`
+
+
+
+
+
+<br>
+<a name="Install-FFMPEG"></a>
+## Install FFMPEG
+
+To install FFMPEG in the Workspace container
+
+1 - Open the `.env` file
+
+2 - Search for the `WORKSPACE_INSTALL_FFMPEG` argument under the Workspace Container and set it to `true`
+
+3 - Re-build the container `docker-compose build workspace`
+
+4 - If you use the `php-worker` container too, please follow the same steps above especially if you have conversions that have been queued.
+
+**PS** Don't forget to install the binary in the `php-fpm` container too by applying the same steps above to its container, otherwise the you'll get an error when running the `php-ffmpeg` binary.
+
+
+
+
+
+
+<br>
+<a name="Install-GNU-Parallel"></a>
+## Install GNU Parallel
+
+GNU Parallel is a command line tool to run multiple processes in parallel.
+
+(see https://www.gnu.org/software/parallel/parallel_tutorial.html)
+
+To install GNU Parallel in the Workspace container
+
+1 - Open the `.env` file
+
+2 - Search for the `WORKSPACE_INSTALL_GNU_PARALLEL` argument under the Workspace Container and set it to `true`
 
 3 - Re-build the container `docker-compose build workspace`
 
@@ -2087,7 +2254,7 @@ This error sometimes happens because your Laravel application isn't running on t
 
 ## I get stuck when building nginx on `fetch http://mirrors.aliyun.com/alpine/v3.5/main/x86_64/APKINDEX.tar.gz`
 
-As stated on [#749](https://github.com/laradock/laradock/issues/749#issuecomment-419652646), Already fixed，just set `CHANGE_SOURCE` to false.		
+As stated on [#749](https://github.com/laradock/laradock/issues/749#issuecomment-419652646), Already fixed，just set `CHANGE_SOURCE` to false.
 
 ## Custom composer repo packagist url and npm registry url
 
