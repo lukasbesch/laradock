@@ -40,7 +40,7 @@ print_style () {
         COLOR="93m"
     elif [[ "$2" == "danger" ]]; then
         COLOR="91m"
-    else #default color
+    else #default colo
         COLOR="0m"
     fi
 
